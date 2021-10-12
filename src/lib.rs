@@ -9,8 +9,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
 	let results: Vec<&str> = if config.case_sensitive {
 		search(&config.query, &contents)
-	} 
-	else {
+	} else {
 		search_case_insensitive(&config.query, &contents)
 	};
 
@@ -27,14 +26,20 @@ pub struct Config {
 }
 
 impl Config {
-	pub fn new(args: &[String]) -> Result<Config, &str> {
+	// need to set the lifetime of &str to 'static, as we are no longer passing a reference as a parameter
+	pub fn new(mut args: env::Args) -> Result<Config, &'static str> {
 
-		if args.len() < 3 {
-			return Err("not enough arguments");
-		}
+		args.next();
 
-		let query: String = args[1].clone();
-		let filename: String = args[2].clone();
+		let query: String = match args.next() {
+			Some(arg) => arg,
+			None => return Err("Didn't get a query string")
+		};
+
+		let filename: String = match args.next() {
+			Some(arg) => arg,
+			None => return Err("Didn't get a file name")
+		};
 
 		let case_sensitive: bool = match env::var("CASE_SENSITIVE") {
 			Err(_) => false,
@@ -45,28 +50,18 @@ impl Config {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-	let mut results: Vec<&str> = Vec::new();
-	
-	for line in contents.lines() {
-		if line.contains(query) {
-			results.push(line);
-		}
-	}
-
-	return results;
+	return contents
+		.lines()
+		.filter(|line| line.contains(query))
+		.collect();
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
 	let query: String = query.to_lowercase();
-	let mut results: Vec<&str> = Vec::new();
-	
-	for line in contents.lines() {
-		if line.to_lowercase().contains(&query) {
-			results.push(line);
-		}
-	}
-
-	return results;
+	return contents
+		.lines()
+		.filter(|line| line.to_lowercase().contains(&query))
+		.collect();
 }
 
 #[cfg(test)]
