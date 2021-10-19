@@ -1,8 +1,7 @@
 use std::fs;
-use std::error::Error;
 use std::env;
 
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+pub fn run(config: Config) -> Result<(), std::io::Error> {
 
 	// '?' means that, if the Result is an Err -> return it
 	let contents: String  = fs::read_to_string(config.filename)?;
